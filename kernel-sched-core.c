@@ -838,8 +838,8 @@ static void update_rq_clock_task(struct rq *rq, s64 delta)
 		if (unlikely(steal > delta))
 			steal = delta;
 
-		st = steal_ticks(steal);
-		steal = st * TICK_NSEC;
+		//st = steal_ticks(steal);
+		//steal = st * TICK_NSEC;
 
 		rq->prev_steal_time_rq += steal;
 
