@@ -715,6 +715,13 @@ static void update_curr(struct cfs_rq *cfs_rq)
 	if (unlikely(!curr))
 		return;
 
+	if (entity_is_task(curr)) {
+		struct task_struct *p = task_of(curr);
+		if (strcmp(p->comm, "netserver") == 0){
+			now = rq_clock_virt(rq_of(cfs_rq));
+	//		printk("%s is using clock_virt \n", p->comm);
+		}
+        }
 	delta_exec = now - curr->exec_start;
 	if (unlikely((s64)delta_exec <= 0))
 		return;
@@ -796,6 +803,7 @@ update_stats_curr_start(struct cfs_rq *cfs_rq, struct sched_entity *se)
 {
 	/*
 	 * We are starting a new run period:
+	 *
 	 */
 	se->exec_start = rq_clock_task(rq_of(cfs_rq));
 }

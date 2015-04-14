@@ -578,6 +578,7 @@ struct rq {
 
 	u64 clock;
 	u64 clock_task;
+	u64 clock_virt;
 
 	atomic_t nr_iowait;
 
@@ -682,6 +683,10 @@ static inline u64 rq_clock_task(struct rq *rq)
 	return rq->clock_task;
 }
 
+static inline u64 rq_clock_virt(struct rq *rq)
+{
+	return rq->clock_virt;
+}
 #ifdef CONFIG_NUMA_BALANCING
 extern void sched_setnuma(struct task_struct *p, int node);
 extern int migrate_task_to(struct task_struct *p, int cpu);

@@ -74,6 +74,12 @@
 #include <linux/binfmts.h>
 #include <linux/context_tracking.h>
 
+//add by Kun
+#include <xen/interface/sched.h>
+#include <asm/xen/hypercall.h>
+#include <linux/time.h>
+////end
+
 #include <asm/switch_to.h>
 #include <asm/tlb.h>
 #include <asm/irq_regs.h>
@@ -822,8 +828,9 @@ static void update_rq_clock_task(struct rq *rq, s64 delta)
 	delta -= irq_delta;
 #endif
 #ifdef CONFIG_PARAVIRT_TIME_ACCOUNTING
-	if (static_key_false((&paravirt_steal_rq_enabled))) {
+	//if (static_key_false((&paravirt_steal_rq_enabled))) {
 		u64 st;
+		s64 delta_virt = delta;
 
 		steal = paravirt_steal_clock(cpu_of(rq));
 		steal -= rq->prev_steal_time_rq;
@@ -836,10 +843,13 @@ static void update_rq_clock_task(struct rq *rq, s64 delta)
 
 		rq->prev_steal_time_rq += steal;
 
-		delta -= steal;
-	}
+		delta_virt -= steal;
+//		delta -= steal;
+		steal = 0;
+	        //printk("update_rq_task_clock steal = %lld\n", steal);
+//	}
 #endif
-
+	rq->clock_virt += delta_virt;
 	rq->clock_task += delta;
 
 #if defined(CONFIG_IRQ_TIME_ACCOUNTING) || defined(CONFIG_PARAVIRT_TIME_ACCOUNTING)
@@ -3098,6 +3108,33 @@ SYSCALL_DEFINE1(nice, int, increment)
 }
 
 #endif
+// mod by Jia
+SYSCALL_DEFINE0(sched_steal)
+{
+	s64 steal;
+	int cpu = smp_processor_id();
+	struct rq *rq = cpu_rq(cpu);
+
+	steal = paravirt_steal_clock(cpu);
+	steal -= rq->prev_steal_time_rq;
+	rq->prev_steal_time_rq += steal;
+	printk("steal = %lld\n", steal);
+        return 0;
+}
+//end
+
+//add by Kun
+#define US_TO_NS(x)     (x * 1E3L)
+SYSCALL_DEFINE1(sched_sleep, int, timeout)
+{
+	struct sched_sleep sched_sleep;
+	sched_sleep.timeout = US_TO_NS(timeout);
+
+	HYPERVISOR_sched_op(SCHEDOP_sleep, &sched_sleep);
+	return 0;
+}
+
+
 
 /**
  * task_prio - return the priority value of a given task.

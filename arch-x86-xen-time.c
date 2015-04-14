@@ -478,8 +478,31 @@ void xen_timer_resume(void)
 	}
 }
 
+/* mod by Jia */
+s64 xen_steal_clock(void)
+{
+	struct vcpu_runstate_info state;
+	s64 runnable, offline, stolen;
+
+	get_runstate_snapshot(&state);
+
+	WARN_ON(state.state != RUNSTATE_running);
+
+
+	/* work out how much time the VCPU has not been runn*ing*  */
+	runnable = state.time[RUNSTATE_runnable];
+	offline = state.time[RUNSTATE_offline];
+	stolen = runnable + offline;
+
+	if (stolen < 0)
+		stolen = 0;
+	
+	return stolen;
+}
+
 static const struct pv_time_ops xen_time_ops __initconst = {
 	.sched_clock = xen_clocksource_read,
+	.steal_clock = xen_steal_clock,
 };
 
 static void __init xen_time_init(void)
